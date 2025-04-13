@@ -1,44 +1,61 @@
 from fastapi import APIRouter, HTTPException
 
-from ecommerceapi.models.post import Comment, CommentIn, UserPost, UserPostIn
+from ecommerceapi.database import comment_table, database, post_table
+from ecommerceapi.models.post import (
+    Comment,
+    CommentIn,
+    UserPost,
+    UserPostIn,
+    UserPostWithComments,
+)
 
 router = APIRouter()
 
-post_table = {}
-comment_table = {}
 
-
-def find_post(post_id: int):
-    return comment_table.get(post_id)
+# la funcion es asincrona dado que la conexion a la db es asincrona
+async def find_post(post_id: int):
+    query = post_table.select().where(post_table.c.id == post_id)
+    return await database.fetch_one(query)
 
 
 @router.post("/post", response_model=UserPost, status_code=201)
 async def create_post(post: UserPostIn):
     data = post.model_dump()
-    last_record_id = len(post_table)
-    register = {**data, "id": last_record_id}
-    post_table[last_record_id] = register
-    return register
+    query = post_table.insert().values(data)
+    last_record_id = await database.execute(query)
+    return {**data, "id": last_record_id}
 
 
 @router.post("/comment", response_model=Comment, status_code=201)
 async def create_comment(comment: CommentIn):
-    post = find_post(comment.post_id)
+    post = await find_post(comment.post_id)
     if not post:
         raise HTTPException(status_code=404, details="Post not found")
+
     data = comment.model_dump()
-    last_record_id = len(data)
-    register = {**data, "id": last_record_id}
-    comment_table[last_record_id] = register
-    return register
+    query = comment_table.insert().values(data)
+    last_record_id = await database.execute(query)
+    return {**data, "id": last_record_id}
 
 
 @router.get("/post", response_model=list[UserPost])
 async def get_all_posts():
-    return list(post_table.values())
+    query = post_table.select()
+    return await database.fetch_all(query)
 
 
-# @router.get("/post/{post_id}/comment", response_model=list[Comment])
-# async def get_comments_on_post(post_id: int):
-#     query = comment_table.select().where(comment_table.c.post_id == post_id)
-#     return await database.fetch_all(query)
+@router.get("/post/{post_id}/comment", response_model=list[Comment])
+async def get_comments_on_post(post_id: int):
+    query = comment_table.select().where(comment_table.c.post_id == post_id)
+    return await database.fetch_all(query)
+
+
+@router.get("/post/{post_id}", response_model=UserPostWithComments)
+async def get_post_with_comments(post_id: int):
+    post = await find_post(post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return {
+        "post": post,
+        "comments": await get_comments_on_post(post_id),
+    }
