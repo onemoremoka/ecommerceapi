@@ -1,0 +1,69 @@
+# Entorno virtual
+env/
+venv/
+ENV/
+.env/
+.venv/
+
+# Archivos de Pyenv
+.python-version
+
+# Archivos de configuración del editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Archivos de logs y debugging
+*.log
+*.pot
+*.mo
+
+# Archivos de coverage y testing
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+.pytest_cache/
+
+# Bases de datos locales
+*.sqlite3
+*.db
+
+# Distribuciones y empaquetado
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Archivos ocultos / temporales
+*.swp
+*.swo
+*.bak
+*~
+.DS_Store
+Thumbs.db
+
+# Entornos de Docker / CI
+__pycache__/
+*.env
+.env.*
+docker-compose.override.yml
+
+# Otros
+.mypy_cache/
+.pyre/
+.pytype/
+.env
