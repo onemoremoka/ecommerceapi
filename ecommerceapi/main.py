@@ -8,6 +8,7 @@ from fastapi.exception_handlers import http_exception_handler
 from ecommerceapi.database import database
 from ecommerceapi.logging_config import configurate_logging
 from ecommerceapi.routers.post import router as post_router
+from ecommerceapi.routers.user import router as user_router
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(CorrelationIdMiddleware)
 app.include_router(post_router)
+app.include_router(user_router)
 
 
 @app.exception_handler(HTTPException)
