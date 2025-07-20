@@ -36,12 +36,11 @@ async def async_client(client) -> AsyncGenerator:
     async with AsyncClient(transport=transport, base_url=client.base_url) as ac:
         yield ac
 
+
 @pytest.fixture()
 async def registered_user(async_client: AsyncClient) -> dict:
     user_details = {"email": "test@example.com", "password": "password"}
-    await async_client.post(
-        "/register", json=user_details
-    )
+    await async_client.post("/register", json=user_details)
     query = user_table.select().where(user_table.c.email == user_details["email"])
     response = await database.fetch_one(query)
     user_details["id"] = response["id"]
