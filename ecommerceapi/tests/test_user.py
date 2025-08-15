@@ -54,7 +54,7 @@ async def test_login_user_not_exists(async_client: AsyncClient):
         "token",
         json={
             "email": "nonexistent@example.com",
-            "password": "wrongpassword",
+            "password": "xxpassword",
         },
     )
     assert response.status_code == 401

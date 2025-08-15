@@ -1,7 +1,9 @@
 import datetime
 import logging
+from typing import Annotated
 
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, jwt
 from passlib.context import CryptContext
 
@@ -11,7 +13,10 @@ SECRET_KEY = "SECERRWIEJTRMKDSFNMSDFK"
 ALGORITHM = "HS256"
 
 logger = logging.getLogger(__name__)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+outh2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+pwd_context = CryptContext(schemes=["bcrypt"])
 
 credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -60,7 +65,7 @@ async def authenticate_user(email: str, password: str):
     return user
 
 
-async def get_current_user(token: str):
+async def get_current_user(token: Annotated[str, Depends(outh2_scheme)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
