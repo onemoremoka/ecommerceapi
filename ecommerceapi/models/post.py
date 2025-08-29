@@ -20,9 +20,14 @@ class Comment(CommentIn):
     id: int
 
 
+class UserPostWithLikes(UserPost):
+    model_config = ConfigDict(from_attributes=True)
+    likes: int
+
+
 # esta clase se usa para responder determinada request
 class UserPostWithComments(BaseModel):
-    post: UserPost
+    post: UserPostWithLikes
     comments: list[Comment]
 
 

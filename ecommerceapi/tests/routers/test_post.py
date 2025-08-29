@@ -106,7 +106,7 @@ async def test_get_all_posts(async_client: AsyncClient, created_post: dict):
     response = await async_client.get("/post")
 
     assert response.status_code == 200
-    assert response.json() == [created_post]
+    assert response.json() == [{**created_post, "likes": 0}]
 
 
 @pytest.mark.anyio
@@ -126,7 +126,10 @@ async def test_get_post_with_comments(
     response = await async_client.get(f"/post/{created_post['id']}")
 
     assert response.status_code == 200
-    assert response.json() == {"post": created_post, "comments": [created_comment]}
+    assert response.json() == {
+        "post": {**created_post, "likes": 0},
+        "comments": [created_comment],
+    }
 
 
 @pytest.mark.anyio
@@ -147,3 +150,54 @@ async def test_like_post(
         headers={"Authorization": f"Bearer {logged_with_token}"},
     )
     assert response.status_code == 201
+
+
+# ENUM tests
+
+
+@pytest.mark.anyio
+async def test_get_all_posts_sorting(
+    async_client: AsyncClient,
+    logged_with_token: str,
+):
+    await create_post("test post one", async_client, logged_with_token)
+    await create_post("test post two", async_client, logged_with_token)
+    response = await async_client.get("/post")
+    assert response.status_code == 200
+
+    data = response.json()
+    expected_order = [2, 1]
+    post_ids = [post["id"] for post in data]
+    assert post_ids == expected_order
+
+
+@pytest.mark.anyio
+async def test_get_all_posts_sorting_desc(
+    async_client: AsyncClient,
+    logged_with_token: str,
+):
+    await create_post("test post one", async_client, logged_with_token)
+    await create_post("test post two", async_client, logged_with_token)
+    response = await async_client.get("/post?sort=desc")
+    assert response.status_code == 200
+
+    data = response.json()
+    expected_order = [1, 2]
+    post_ids = [post["id"] for post in data]
+    assert post_ids == expected_order
+
+
+@pytest.mark.anyio
+async def test_get_all_posts_sorting_asc(
+    async_client: AsyncClient,
+    logged_with_token: str,
+):
+    await create_post("test post one", async_client, logged_with_token)
+    await create_post("test post two", async_client, logged_with_token)
+    response = await async_client.get("/post?sort=asc")
+    assert response.status_code == 200
+
+    data = response.json()
+    expected_order = [2, 1]
+    post_ids = [post["id"] for post in data]
+    assert post_ids == expected_order
