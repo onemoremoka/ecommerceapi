@@ -182,7 +182,7 @@ async def test_get_all_posts_sorting_desc(
     assert response.status_code == 200
 
     data = response.json()
-    expected_order = [1, 2]
+    expected_order = [2, 1]
     post_ids = [post["id"] for post in data]
     assert post_ids == expected_order
 
