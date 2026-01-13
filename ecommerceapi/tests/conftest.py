@@ -22,19 +22,19 @@ def client() -> Generator:
     yield TestClient(app)
 
 
-@pytest.fixture(autouse=True)
+# crea un cliente asincrono
+@pytest.fixture()
+async def async_client(client, db) -> AsyncGenerator:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url=client.base_url) as ac:
+        yield ac
+
+
+@pytest.fixture()
 async def db() -> AsyncGenerator:
     await database.connect()
     yield
     await database.disconnect()
-
-
-# crea un cliente asincrono
-@pytest.fixture()
-async def async_client(client) -> AsyncGenerator:
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url=client.base_url) as ac:
-        yield ac
 
 
 @pytest.fixture()

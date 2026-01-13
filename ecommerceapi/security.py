@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, jwt
-from passlib.context import CryptContext
+import bcrypt
 
 from ecommerceapi.database import database, user_table
 
@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 
 outh2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-pwd_context = CryptContext(schemes=["bcrypt"])
-
 
 def create_credentials_exception(detail: str) -> HTTPException:
     return HTTPException(
@@ -27,17 +25,18 @@ def create_credentials_exception(detail: str) -> HTTPException:
     )
 
 
-def access_token_expire_minutes() -> int:  # use for testing purposes
+def access_token_expire_minutes() -> int: # token JWT acces endpoints
     return 30
 
 
-def confirm_token_expire_minutes() -> int:
+def confirm_token_expire_minutes() -> int: # token JWT confirm email
     return 1440
 
 
 def get_subject_from_token_type(
     token: str, type: Literal["access", "confirmation"]
 ) -> str:
+    """ Extracts and validates the subject from a JWT token based on its type. """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except ExpiredSignatureError as e:
@@ -80,11 +79,16 @@ def create_confirmation_token(email) -> str:
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    password_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    password_bytes = plain_password.encode('utf-8')
+    hashed_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 async def get_user(email: str):
@@ -99,7 +103,7 @@ async def authenticate_user(email: str, password: str):
     logger.debug("Authenticating user", extra={"email": email})
     user = await get_user(email)
     if not user:
-        raise create_credentials_exception("User not found")
+        raise create_credentials_exception("Could not find user for this token")
     if not verify_password(password, user.password):
         raise create_credentials_exception("Incorrect email or password")
     return user
@@ -109,5 +113,5 @@ async def get_current_user(token: Annotated[str, Depends(outh2_scheme)]):
     email = get_subject_from_token_type(token, type="access")
     user = await get_user(email)
     if user is None:
-        raise create_credentials_exception("User not found")
+        raise create_credentials_exception("Could not find user for this token")
     return user

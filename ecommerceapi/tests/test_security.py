@@ -29,9 +29,7 @@ def test_confirmation_access_token():
 def test_get_subject_from_token_type_valid_confirmation():
     sample_email = "sample@example.com"
     token = security.create_confirmation_token(sample_email)
-    assert sample_email == security.get_subject_from_token_type(
-        token, type="confirmation"
-    )
+    assert sample_email == security.get_subject_from_token_type(token, type="confirmation")
 
 
 def test_get_subject_from_token_type_valid_access():
@@ -41,21 +39,36 @@ def test_get_subject_from_token_type_valid_access():
 
 
 def test_get_subject_from_token_type_expired(mocker):
-    mocker.patch(
-        "ecommerceapi.security.access_token_expire_minutes", return_value=-1
-    )  # esto fuerza a que el token expire
+    mocker.patch("ecommerceapi.security.access_token_expire_minutes", return_value=-1)
     sample_email = "sample@example.com"
     token = security.create_access_token(sample_email)
     with pytest.raises(security.HTTPException) as exc_info:
         security.get_subject_from_token_type(token, type="access")
-    assert "Token has expired" in str(exc_info.value)
+    assert "Token has expired" == exc_info.value.detail
 
 
 def test_get_subject_from_token_type_invalid_token():
     token = "invalid token"
     with pytest.raises(security.HTTPException) as exc_info:
         security.get_subject_from_token_type(token, type="access")
-    assert "Invalid Token" in str(exc_info.value)
+    assert "Invalid Token" in exc_info.value.detail
+
+def test_get_subject_for_token_type_missing_sub():
+    email = "example@example.com"
+    token = security.create_access_token(email)
+    decoded_payload = jwt.decode(token, key=security.SECRET_KEY, algorithms=[security.ALGORITHM])
+    del decoded_payload["sub"]
+    modified_token = jwt.encode(decoded_payload, key=security.SECRET_KEY, algorithm=security.ALGORITHM)
+    with pytest.raises(security.HTTPException) as exc_info:
+        security.get_subject_from_token_type(modified_token, type="access")
+    assert "Token is missing 'sub' field" == exc_info.value.detail
+
+def test_get_subject_for_token_type_wrong_type():
+    email = "example@example.com"
+    token = security.create_access_token(email)
+    with pytest.raises(security.HTTPException) as exc_info:
+        security.get_subject_from_token_type(token, type="confirmation")
+    assert "Token has incorrect type, expected: confirmation" == exc_info.value.detail
 
 
 @pytest.mark.anyio

@@ -14,8 +14,8 @@ async def register_user(async_client: AsyncClient, email: str, password: str):
 async def test_register_user(async_client: AsyncClient):
     response = await register_user(
         async_client,
-        "example@example.example",
-        "example.example",
+        "example@example.com",
+        "password",
     )
     assert response.status_code == 201
     assert "User created" in response.json()["detail"]
