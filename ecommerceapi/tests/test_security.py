@@ -29,7 +29,9 @@ def test_confirmation_access_token():
 def test_get_subject_from_token_type_valid_confirmation():
     sample_email = "sample@example.com"
     token = security.create_confirmation_token(sample_email)
-    assert sample_email == security.get_subject_from_token_type(token, type="confirmation")
+    assert sample_email == security.get_subject_from_token_type(
+        token, type="confirmation"
+    )
 
 
 def test_get_subject_from_token_type_valid_access():
@@ -53,15 +55,21 @@ def test_get_subject_from_token_type_invalid_token():
         security.get_subject_from_token_type(token, type="access")
     assert "Invalid Token" in exc_info.value.detail
 
+
 def test_get_subject_for_token_type_missing_sub():
     email = "example@example.com"
     token = security.create_access_token(email)
-    decoded_payload = jwt.decode(token, key=security.SECRET_KEY, algorithms=[security.ALGORITHM])
+    decoded_payload = jwt.decode(
+        token, key=security.SECRET_KEY, algorithms=[security.ALGORITHM]
+    )
     del decoded_payload["sub"]
-    modified_token = jwt.encode(decoded_payload, key=security.SECRET_KEY, algorithm=security.ALGORITHM)
+    modified_token = jwt.encode(
+        decoded_payload, key=security.SECRET_KEY, algorithm=security.ALGORITHM
+    )
     with pytest.raises(security.HTTPException) as exc_info:
         security.get_subject_from_token_type(modified_token, type="access")
     assert "Token is missing 'sub' field" == exc_info.value.detail
+
 
 def test_get_subject_for_token_type_wrong_type():
     email = "example@example.com"

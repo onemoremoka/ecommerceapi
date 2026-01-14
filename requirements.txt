@@ -10,3 +10,6 @@ python-json-logger
 python-jose
 python-multipart
 bcrypt
+
+aiofiles
+b2sdk

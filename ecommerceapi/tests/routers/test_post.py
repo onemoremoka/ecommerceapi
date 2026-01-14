@@ -59,7 +59,7 @@ async def created_comment(
 
 @pytest.mark.anyio
 async def test_create_post(
-    async_client: AsyncClient, registered_user: dict, logged_with_token: str
+    async_client: AsyncClient, confirmed_user: dict, logged_with_token: str
 ):
     body = "test body"
 
@@ -71,7 +71,7 @@ async def test_create_post(
 
     assert response.status_code == 201
     assert {
-        "id": 1,
+        "id": confirmed_user["id"],
         "body": body,
     }.items() <= response.json().items()
 
@@ -85,7 +85,9 @@ async def test_create_post_expired_token(
     )  # Set token to expire immediately
     token = security.create_access_token(registered_user["email"])
     response = await async_client.post(
-        "/post", json={"body": "test body"}, headers={"Authorization": f"Bearer {token}"}
+        "/post",
+        json={"body": "test body"},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 401
     assert "Token has expired" in response.json()["detail"]

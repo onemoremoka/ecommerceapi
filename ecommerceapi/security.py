@@ -2,10 +2,10 @@ import datetime
 import logging
 from typing import Annotated, Literal
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, jwt
-import bcrypt
 
 from ecommerceapi.database import database, user_table
 
@@ -25,18 +25,18 @@ def create_credentials_exception(detail: str) -> HTTPException:
     )
 
 
-def access_token_expire_minutes() -> int: # token JWT acces endpoints
+def access_token_expire_minutes() -> int:  # token JWT acces endpoints
     return 30
 
 
-def confirm_token_expire_minutes() -> int: # token JWT confirm email
+def confirm_token_expire_minutes() -> int:  # token JWT confirm email
     return 1440
 
 
 def get_subject_from_token_type(
     token: str, type: Literal["access", "confirmation"]
 ) -> str:
-    """ Extracts and validates the subject from a JWT token based on its type. """
+    """Extracts and validates the subject from a JWT token based on its type."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except ExpiredSignatureError as e:
@@ -54,7 +54,9 @@ def get_subject_from_token_type(
 
     type_ = payload.get("type")
     if type_ != type or type_ is None:
-        raise create_credentials_exception(f"Token has incorrect type, expected: {type}")
+        raise create_credentials_exception(
+            f"Token has incorrect type, expected: {type}"
+        )
     return email
 
 
@@ -79,15 +81,15 @@ def create_confirmation_token(email) -> str:
 
 
 def get_password_hash(password: str) -> str:
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password_bytes, salt)
-    return hashed.decode('utf-8')
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    password_bytes = plain_password.encode('utf-8')
-    hashed_bytes = hashed_password.encode('utf-8')
+    password_bytes = plain_password.encode("utf-8")
+    hashed_bytes = hashed_password.encode("utf-8")
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
@@ -106,6 +108,8 @@ async def authenticate_user(email: str, password: str):
         raise create_credentials_exception("Could not find user for this token")
     if not verify_password(password, user.password):
         raise create_credentials_exception("Incorrect email or password")
+    if not user.is_confirmed:
+        raise create_credentials_exception("User has not confirmed email")
     return user
 
 
