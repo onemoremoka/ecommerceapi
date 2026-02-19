@@ -39,11 +39,11 @@ likes_table = sqlalchemy.Table(
     sqlalchemy.Column("user_id", sqlalchemy.ForeignKey("users.id"), nullable=False),
 )
 
-engine = sqlalchemy.create_engine(
-    config.DATABASE_URL, connect_args={"check_same_thread": False}
-)
+connect_args = {"check_same_thread": False} if "sqlite" in config.DATABASE_URL else {}
+engine = sqlalchemy.create_engine(config.DATABASE_URL, connect_args=connect_args)
 
+db_args = {"min_size": 5, "max_size": 10} if "postgres" in config.DATABASE_URL else {}
 metadata.create_all(engine)
 database = databases.Database(
-    config.DATABASE_URL, force_rollback=config.DB_FORCE_ROLL_BACK
+    config.DATABASE_URL, force_rollback=config.DB_FORCE_ROLL_BACK, **db_args
 )
